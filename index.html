@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文化祭モバイルオーダー - 3年3組 遠山ショップ</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans JP"', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#fef2f2',
+                            100: '#fee2e2',
+                            500: '#ef4444',
+                            600: '#dc2626',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom styles for animations and specific UI tweaks */
+        body {
+            background-color: #f3f4f6;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .slide-up-enter {
+            transform: translateY(100%);
+            opacity: 0;
+        }
+        .slide-up-enter-active {
+            transform: translateY(0);
+            opacity: 1;
+            transition: all 0.3s ease-out;
+        }
+        .fade-enter {
+            opacity: 0;
+        }
+        .fade-enter-active {
+            opacity: 1;
+            transition: opacity 0.3s ease-in-out;
+        }
+        /* Hide scrollbar for clean look */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+    </style>
+</head>
+<body class="text-gray-800 font-sans pb-24">
+
+    <!-- Header -->
+    <header class="bg-brand-600 text-white p-4 sticky top-0 z-50 shadow-md">
+        <div class="max-w-md mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold"><i class="fa-solid fa-store mr-2"></i>3年3組 遠山ショップ</h1>
+            <div class="relative cursor-pointer" onclick="openCart()">
+                <i class="fa-solid fa-cart-shopping text-2xl"></i>
+                <span id="cart-badge" class="absolute -top-2 -right-2 bg-yellow-400 text-brand-600 text-xs font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-md mx-auto p-4">
+        
+        <!-- Welcome Message -->
+        <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
+            <h2 class="text-lg font-bold text-gray-800 mb-2">ご注文はこちらから！</h2>
+            <p class="text-sm text-gray-600">お並びいただかずに、スマホから簡単に注文・決済が可能です。</p>
+        </div>
+
+        <!-- Product List -->
+        <h3 class="text-lg font-bold mb-4 flex items-center"><i class="fa-solid fa-utensils mr-2 text-brand-500"></i>メニュー</h3>
+        <div class="grid grid-cols-1 gap-4" id="product-list">
+            <!-- Products will be injected here by JS -->
+        </div>
+
+    </main>
+
+    <!-- Cart Modal (Hidden by default) -->
+    <div id="cart-modal" class="fixed inset-0 bg-black bg-opacity-50 z-[60] hidden flex-col justify-end">
+        <div class="bg-white w-full max-w-md mx-auto rounded-t-2xl h-[85vh] flex flex-col slide-up-enter slide-up-enter-active">
+            
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center p-4 border-b">
+                <h2 class="text-xl font-bold">カート</h2>
+                <button onclick="closeCart()" class="text-gray-500 hover:text-gray-700 p-2">
+                    <i class="fa-solid fa-xmark text-2xl"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content (Scrollable) -->
+            <div class="flex-1 overflow-y-auto p-4">
+                
+                <!-- Empty Cart Message -->
+                <div id="empty-cart-msg" class="text-center text-gray-500 py-10 hidden">
+                    <i class="fa-solid fa-basket-shopping text-4xl mb-3 text-gray-300"></i>
+                    <p>カートに商品がありません</p>
+                </div>
+
+                <!-- Cart Items List -->
+                <div id="cart-items" class="space-y-4 mb-6">
+                    <!-- Cart items will be injected here -->
+                </div>
+
+                <!-- Order Options Form -->
+                <div id="order-form-container" class="hidden border-t pt-4">
+                    <h3 class="font-bold text-lg mb-3">お受け取り方法</h3>
+                    
+                    <!-- Receive Method Selection -->
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <label class="border-2 rounded-lg p-3 text-center cursor-pointer flex flex-col items-center border-brand-500 bg-brand-50 text-brand-600" id="label-now">
+                            <input type="radio" name="receive-method" value="now" class="hidden" checked onchange="toggleTimeSelect()">
+                            <i class="fa-solid fa-bolt text-xl mb-1"></i>
+                            <span class="font-bold text-sm">すぐに受け取る</span>
+                        </label>
+                        <label class="border-2 border-gray-200 rounded-lg p-3 text-center cursor-pointer flex flex-col items-center text-gray-600" id="label-later">
+                            <input type="radio" name="receive-method" value="later" class="hidden" onchange="toggleTimeSelect()">
+                            <i class="fa-regular fa-clock text-xl mb-1"></i>
+                            <span class="font-bold text-sm">時間を指定する</span>
+                        </label>
+                    </div>
+
+                    <!-- Time Selection (Hidden if 'now' is selected) -->
+                    <div id="time-select-container" class="hidden mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">受け取り希望時間</label>
+                        <select id="pickup-time" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-brand-500 focus:ring-brand-500 p-3 bg-gray-50 border outline-none">
+                            <option value="">選択してください</option>
+                            <option value="10:30">10:30</option>
+                            <option value="11:00">11:00</option>
+                            <option value="11:30">11:30</option>
+                            <option value="13:00">13:00</option>
+                            <option value="13:30">13:30</option>
+                            <option value="14:00">14:00</option>
+                        </select>
+                        <p class="text-xs text-red-500 mt-1 hidden" id="time-error">受け取り時間を指定してください</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Modal Footer (Total & Checkout Button) -->
+            <div id="cart-footer" class="p-4 border-t bg-gray-50 hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-gray-600">合計</span>
+                    <span class="text-2xl font-bold text-brand-600">¥<span id="cart-total-price">0</span></span>
+                </div>
+                <button onclick="processOrder()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition duration-200 flex justify-center items-center">
+                    <i class="fa-solid fa-paper-plane mr-2"></i>注文を確定する
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Success Screen (Hidden by default) -->
+    <div id="success-screen" class="fixed inset-0 bg-white z-[70] hidden flex-col items-center justify-center p-6 text-center">
+        <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
+            <i class="fa-solid fa-check text-4xl text-green-500"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">ご注文ありがとうございます！</h2>
+        <p class="text-gray-600 mb-8">注文番号は会計時に必要なため保存してください。<br>続いてお支払いにお進みください。</p>
+        
+        <div class="bg-gray-50 p-4 rounded-xl w-full max-w-sm mb-8 border border-gray-200 text-left">
+            <h3 class="font-bold text-sm text-gray-500 mb-2">注文番号</h3>
+            <p class="text-2xl font-mono font-bold text-gray-800" id="order-number">A-1024</p>
+        </div>
+
+        <button onclick="goToPayPay()" class="w-full max-w-sm bg-[#FF0033] hover:bg-red-700 text-white font-bold py-4 px-4 rounded-xl shadow-lg transition duration-200 flex justify-center items-center mb-4">
+            <span class="font-bold text-lg">PayPayで支払う</span>
+        </button>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // 【連携用】Googleフォームへデータを送信する関数
+        function submitToGoogleForm(orderId, receiveMethod, orderText, totalAmount) {
+                    // 送信するデータをセットする
+        const formData = new URLSearchParams();
+        // ▼ステップ2で調べたIDに書き換える
+        formData.append('entry.11111111', orderId);       // 注文番号のID
+        formData.append('entry.22222222', receiveMethod); // 受け取り指定のID
+        formData.append('entry.33333333', orderText);     // 注文内容のID
+        formData.append('entry.44444444', `${totalAmount}円`); // 合計金額のID
+
+        // Googleフォームへ送信（fetch APIを使用）
+        fetch(formUrl, {
+            method: 'POST',
+            mode: 'no-cors', // ※超重要：これがないとエラーで送信できません
+            headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: formData
+        })
+        .then(() => {
+            // 送信成功時の処理（no-corsの場合、必ずここに来ます）
+            console.log("フォーム送信完了");
+        })
+        .catch((error) => {
+            console.error("送信エラー:", error);
+            alert("注文の送信に失敗しました。もう一度お試しください。");
+        });
+        }
+        // --- Configuration ---
+        // TODO: Replace this URL with your actual Google Form submission URL endpoint.
+        // Usually looks like: https://docs.google.com/forms/d/e/.../formResponse
+        const GOOGLE_FORM_URL =　https://docs.google.com/forms/d/e/1FAIpQLSeqcgDK1joi3notW0poQ87CH62L_YmTv-0wmSeliU1XNJhi-Q/formResponse; 
+        
+        // Product Data
+        const products = [
+            { id: 'p1', name: '特製 やきとり', price: 400, desc: '香りがたまらない！', img: 'https://placehold.co/100x100/fef2f2/ef4444?text=Yakishoba' },
+            { id: 'p2', name: 'ジャンボ フランクフルト', price: 300, desc: 'パリッとジューシー！', img: 'https://placehold.co/100x100/fef2f2/ef4444?text=Frankfurt' },
+        ];
+
+        // Application State
+        let cart = [];
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderProducts();
+        });
+
+        // --- Functions ---
+        function renderProducts() {
+            const listContainer = document.getElementById('product-list');
+            listContainer.innerHTML = '';
+
+            products.forEach(product => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center';
+                itemDiv.innerHTML = `
+                    <img src="${product.img}" alt="${product.name}" class="w-20 h-20 object-cover rounded-lg mr-4 border border-gray-200">
+                    <div class="flex-1">
+                        <h4 class="font-bold text-gray-800">${product.name}</h4>
+                        <p class="text-xs text-gray-500 mb-2">${product.desc}</p>
+                        <div class="font-bold text-brand-600">¥${product.price}</div>
+                    </div>
+                    <button onclick="addToCart('${product.id}')" class="bg-brand-100 text-brand-600 hover:bg-brand-200 w-10 h-10 rounded-full flex items-center justify-center transition-colors">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                `;
+                listContainer.appendChild(itemDiv);
+            });
+        }
+
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+
+            const existingItem = cart.find(item => item.product.id === productId);
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({ product: product, quantity: 1 });
+            }
+
+            updateCartBadge();
+            // Provide visual feedback (could be a toast notification)
+            const btn = event.currentTarget;
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check text-green-600"></i>';
+            btn.classList.replace('bg-brand-100', 'bg-green-100');
+            setTimeout(() => {
+                btn.innerHTML = originalHtml;
+                btn.classList.replace('bg-green-100', 'bg-brand-100');
+            }, 500);
+        }
+
+        function updateCartBadge() {
+            const badge = document.getElementById('cart-badge');
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            
+            if (totalItems > 0) {
+                badge.innerText = totalItems;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+            updateCartModalUI();
+        }
+
+        function updateCartModalUI() {
+            const itemsContainer = document.getElementById('cart-items');
+            const emptyMsg = document.getElementById('empty-cart-msg');
+            const formContainer = document.getElementById('order-form-container');
+            const footer = document.getElementById('cart-footer');
+            const totalPriceEl = document.getElementById('cart-total-price');
+
+            itemsContainer.innerHTML = '';
+            let totalPrice = 0;
+
+            if (cart.length === 0) {
+                emptyMsg.classList.remove('hidden');
+                formContainer.classList.add('hidden');
+                footer.classList.add('hidden');
+                return;
+            }
+
+            emptyMsg.classList.add('hidden');
+            formContainer.classList.remove('hidden');
+            footer.classList.remove('hidden');
+
+            cart.forEach((item, index) => {
+                totalPrice += item.product.price * item.quantity;
+                const itemEl = document.createElement('div');
+                itemEl.className = 'flex justify-between items-center py-2 border-b border-gray-100 last:border-0';
+                itemEl.innerHTML = `
+                    <div class="flex-1">
+                        <div class="font-medium text-gray-800">${item.product.name}</div>
+                        <div class="text-sm text-gray-500">¥${item.product.price}</div>
+                    </div>
+                    <div class="flex items-center space-x-3 bg-gray-100 rounded-lg p-1">
+                        <button onclick="changeQuantity(${index}, -1)" class="w-8 h-8 rounded bg-white text-gray-600 shadow-sm flex items-center justify-center">
+                            <i class="fa-solid fa-minus text-xs"></i>
+                        </button>
+                        <span class="font-bold w-4 text-center">${item.quantity}</span>
+                        <button onclick="changeQuantity(${index}, 1)" class="w-8 h-8 rounded bg-white text-gray-600 shadow-sm flex items-center justify-center">
+                            <i class="fa-solid fa-plus text-xs"></i>
+                        </button>
+                    </div>
+                `;
+                itemsContainer.appendChild(itemEl);
+            });
+
+            totalPriceEl.innerText = totalPrice.toLocaleString();
+        }
+
+        function changeQuantity(cartIndex, change) {
+            if (cartIndex < 0 || cartIndex >= cart.length) return;
+            
+            cart[cartIndex].quantity += change;
+            if (cart[cartIndex].quantity <= 0) {
+                cart.splice(cartIndex, 1);
+            }
+            updateCartBadge();
+        }
+
+        function openCart() {
+            document.getElementById('cart-modal').classList.remove('hidden');
+            document.getElementById('cart-modal').classList.add('flex');
+            updateCartModalUI();
+        }
+
+        function closeCart() {
+            document.getElementById('cart-modal').classList.add('hidden');
+            document.getElementById('cart-modal').classList.remove('flex');
+        }
+
+        function toggleTimeSelect() {
+            const method = document.querySelector('input[name="receive-method"]:checked').value;
+            const timeContainer = document.getElementById('time-select-container');
+            const labelNow = document.getElementById('label-now');
+            const labelLater = document.getElementById('label-later');
+
+            if (method === 'later') {
+                timeContainer.classList.remove('hidden');
+                // Style updates for radio buttons
+                labelLater.classList.add('border-brand-500', 'bg-brand-50', 'text-brand-600');
+                labelLater.classList.remove('border-gray-200', 'text-gray-600');
+                labelNow.classList.remove('border-brand-500', 'bg-brand-50', 'text-brand-600');
+                labelNow.classList.add('border-gray-200', 'text-gray-600');
+            } else {
+                timeContainer.classList.add('hidden');
+                // Style updates for radio buttons
+                labelNow.classList.add('border-brand-500', 'bg-brand-50', 'text-brand-600');
+                labelNow.classList.remove('border-gray-200', 'text-gray-600');
+                labelLater.classList.remove('border-brand-500', 'bg-brand-50', 'text-brand-600');
+                labelLater.classList.add('border-gray-200', 'text-gray-600');
+            }
+        }
+
+        function processOrder() {
+            // Validation
+            let isValid = true;
+            const nameInput = document.getElementById('customer-name');
+            const nameError = document.getElementById('name-error');
+            const method = document.querySelector('input[name="receive-method"]:checked').value;
+            const timeSelect = document.getElementById('pickup-time');
+            const timeError = document.getElementById('time-error');
+
+            if (!nameInput.value.trim()) {
+                nameError.classList.remove('hidden');
+                nameInput.classList.add('border-red-500');
+                isValid = false;
+            } else {
+                nameError.classList.add('hidden');
+                nameInput.classList.remove('border-red-500');
+            }
+
+            if (method === 'later' && !timeSelect.value) {
+                timeError.classList.remove('hidden');
+                timeSelect.classList.add('border-red-500');
+                isValid = false;
+            } else {
+                timeError.classList.add('hidden');
+                timeSelect.classList.remove('border-red-500');
+            }
+
+            if (!isValid) return;
+
+            // Prepare Order Data
+            const orderId = 'A-' + Math.floor(1000 + Math.random() * 9000);
+            const customerName = nameInput.value.trim();
+            const receiveTime = method === 'now' ? '即時' : timeSelect.value;
+            
+            // Format cart details to string
+            let orderDetails = cart.map(item => `${item.product.name} x${item.quantity}`).join(', ');
+            let totalPrice = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+
+            const orderData = {
+                orderId: orderId,
+                name: customerName,
+                time: receiveTime,
+                details: orderDetails,
+                total: totalPrice
+            };
+
+            console.log("Submitting Order Data:", orderData);
+
+            // Send to Google Forms (Simulated or Real depending on setup)
+            submitToGoogleForm(orderData);
+        }
+
+        function submitToGoogleForm(data) {
+            // Note: To make this work with a real Google Form:
+            // 1. Get the form action URL.
+            // 2. Find the "entry.XXXXXX" name attributes for each input field.
+            // 3. Create a FormData object or use fetch with those specific entry names.
+            // 4. Important: Set mode to 'no-cors' if submitting directly from browser.
+
+            /* Example implementation for actual Form submission:
+            const formData = new FormData();
+            formData.append('entry.123456789', data.orderId);  // Example entry ID
+            formData.append('entry.987654321', data.name);
+            formData.append('entry.111111111', data.time);
+            formData.append('entry.222222222', data.details);
+            formData.append('entry.333333333', data.total);
+
+            fetch(GOOGLE_FORM_URL, {
+                method: 'POST',
+                mode: 'no-cors', // Crucial for forms across domains
+                body: formData
+            })
+            .then(response => {
+                showSuccessScreen(data.orderId);
+            })
+            .catch(error => console.error('Error submitting form', error));
+            */
+
+            // Simulation: Since we don't have a real form URL, we simulate success
+            // In a real scenario, remove this timeout and use the fetch API above.
+            
+            // Change button to loading state
+            const btn = document.querySelector('#cart-footer button');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 送信中...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                showSuccessScreen(data.orderId);
+                // Reset button state
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }, 800);
+        }
+
+        function showSuccessScreen(orderId) {
+            closeCart();
+            document.getElementById('order-number').innerText = orderId;
+            document.getElementById('success-screen').classList.remove('hidden');
+            document.getElementById('success-screen').classList.add('flex');
+            
+            // Clear cart data
+            cart = [];
+            updateCartBadge();
+        }
+
+        function goToPayPay() {
+            // Dummy URL for PayPay.
+            // In reality, this might be a static QR code image page, or a deep link if possible.
+            alert("PayPayの決済画面（ダミー）へ遷移します。\n※本番環境では決済用URLを指定します。");
+            // window.location.href = "https://paypay.ne.jp/..."; 
+        }
+
+        function resetApp() {
+            document.getElementById('success-screen').classList.add('hidden');
+            document.getElementById('success-screen').classList.remove('flex');
+            
+            // Reset form fields
+            document.getElementById('customer-name').value = '';
+            document.getElementById('pickup-time').value = '';
+            document.getElementById('label-now').click(); // Reset radio to 'now'
+            
+            window.scrollTo(0, 0);
+        }
+
+    </script>
+</body>
+</html>
