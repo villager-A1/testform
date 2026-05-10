@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>文化祭モバイルオーダー - 3年3組 遠山ショップ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -21,125 +21,198 @@
         body { background-color: #f3f4f6; -webkit-tap-highlight-color: transparent; }
         .slide-up { animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        /* タップ時の反応を良くする */
+        button:active { transform: scale(0.98); opacity: 0.8; }
+        .hidden-node { display: none !important; }
     </style>
 </head>
 <body class="text-gray-800 font-sans pb-24">
 
+    <!-- ヘッダー -->
     <header class="bg-brand-600 text-white p-4 sticky top-0 z-50 shadow-md">
         <div class="max-w-md mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold"><i class="fa-solid fa-store mr-2"></i>3年3組 遠山ショップ</h1>
-            <div class="relative cursor-pointer" onclick="openCart()">
+            <h1 class="text-xl font-bold flex items-center">
+                <i class="fa-solid fa-store mr-2"></i>3年3組 遠山ショップ
+            </h1>
+            <button id="cart-trigger" class="relative p-2 focus:outline-none">
                 <i class="fa-solid fa-cart-shopping text-2xl"></i>
-                <span id="cart-badge" class="absolute -top-2 -right-2 bg-yellow-400 text-brand-600 text-xs font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
-            </div>
+                <span id="cart-badge" class="absolute top-0 right-0 bg-yellow-400 text-brand-600 text-xs font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+            </button>
         </div>
     </header>
 
     <main class="max-w-md mx-auto p-4">
         <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
-            <h2 class="text-lg font-bold text-gray-800 mb-2">ご注文はこちらから！</h2>
-            <p class="text-sm text-gray-600">お並びいただかずに、スマホから簡単に注文が可能です。</p>
+            <h2 class="text-lg font-bold text-gray-800 mb-2 text-center">ご注文はこちらから！</h2>
+            <p class="text-sm text-gray-600 text-center">お並びいただかずに、スマホから簡単に注文が可能です。</p>
         </div>
 
-        <h3 class="text-lg font-bold mb-4 flex items-center"><i class="fa-solid fa-utensils mr-2 text-brand-500"></i>メニュー</h3>
+        <h3 class="text-lg font-bold mb-4 flex items-center">
+            <i class="fa-solid fa-utensils mr-2 text-brand-500"></i>メニュー
+        </h3>
         <div class="grid grid-cols-1 gap-4" id="product-list">
-            </div>
+            <!-- JSで動的に追加 -->
+        </div>
     </main>
 
-    <div id="cart-modal" class="fixed inset-0 bg-black bg-opacity-50 z-[60] hidden flex-col justify-end">
-        <div class="bg-white w-full max-w-md mx-auto rounded-t-2xl h-[85vh] flex flex-col slide-up">
-            <div class="flex justify-between items-center p-4 border-b">
-                <h2 class="text-xl font-bold">カート</h2>
-                <button onclick="closeCart()" class="text-gray-500 p-2"><i class="fa-solid fa-xmark text-2xl"></i></button>
+    <!-- カートモーダル -->
+    <div id="cart-modal" class="fixed inset-0 bg-black bg-opacity-60 z-[60] hidden flex-col justify-end transition-opacity">
+        <div class="bg-white w-full max-w-md mx-auto rounded-t-3xl h-[85vh] flex flex-col slide-up overflow-hidden">
+            <div class="flex justify-between items-center p-5 border-b">
+                <h2 class="text-xl font-bold">注文内容の確認</h2>
+                <button id="close-cart-btn" class="text-gray-400 p-2"><i class="fa-solid fa-xmark text-2xl"></i></button>
             </div>
 
-            <div class="flex-1 overflow-y-auto p-4">
-                <div id="empty-cart-msg" class="text-center text-gray-500 py-10">
-                    <i class="fa-solid fa-basket-shopping text-4xl mb-3 text-gray-300"></i>
-                    <p>カートに商品がありません</p>
+            <div class="flex-1 overflow-y-auto p-5">
+                <div id="empty-cart-msg" class="text-center text-gray-400 py-16">
+                    <i class="fa-solid fa-basket-shopping text-5xl mb-4 opacity-30"></i>
+                    <p>カートに商品が入っていません</p>
                 </div>
-                <div id="cart-items" class="space-y-4 mb-6"></div>
+                
+                <div id="cart-items" class="space-y-4 mb-8"></div>
 
-                <div id="order-form-container" class="hidden border-t pt-4">
-                    <h3 class="font-bold text-lg mb-3">お受け取り方法</h3>
-                    <div class="grid grid-cols-2 gap-3 mb-4">
-                        <button onclick="setMethod('now')" id="btn-now" class="border-2 rounded-lg p-3 text-center border-brand-500 bg-brand-50 text-brand-600">
-                            <i class="fa-solid fa-bolt text-xl mb-1"></i><br><span class="font-bold text-sm">すぐに受け取る</span>
-                        </button>
-                        <button onclick="setMethod('later')" id="btn-later" class="border-2 border-gray-200 rounded-lg p-3 text-center text-gray-600">
-                            <i class="fa-regular fa-clock text-xl mb-1"></i><br><span class="font-bold text-sm">時間を指定する</span>
-                        </button>
+                <div id="order-form-container" class="hidden space-y-6 pt-4 border-t">
+                    <div>
+                        <h3 class="font-bold text-lg mb-3">お受け取り方法</h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button id="btn-now" class="border-2 rounded-xl p-4 text-center transition-all duration-200">
+                                <i class="fa-solid fa-bolt text-xl mb-1"></i><br>
+                                <span class="font-bold text-sm">すぐに受取</span>
+                            </button>
+                            <button id="btn-later" class="border-2 rounded-xl p-4 text-center transition-all duration-200">
+                                <i class="fa-regular fa-clock text-xl mb-1"></i><br>
+                                <span class="font-bold text-sm">時間を指定</span>
+                            </button>
+                        </div>
                     </div>
-                    <div id="time-select-container" class="hidden mb-4">
-                        <select id="pickup-time" class="w-full border rounded-lg p-3 bg-gray-50 outline-none">
-                            <option value="">希望時間を選択</option>
-                            <option value="10:30">10:30</option><option value="11:00">11:00</option>
-                            <option value="11:30">11:30</option><option value="12:00">12:00</option>
-                            <option value="13:00">13:00</option><option value="13:30">13:30</option>
+                    
+                    <div id="time-select-container" class="hidden">
+                        <label class="block text-sm font-bold text-gray-500 mb-2">受け取り希望時間</label>
+                        <select id="pickup-time" class="w-full border-2 border-gray-100 rounded-xl p-4 bg-gray-50 outline-none focus:border-brand-500 transition-colors">
+                            <option value="">選択してください</option>
+                            <option value="10:30">10:30</option>
+                            <option value="11:00">11:00</option>
+                            <option value="11:30">11:30</option>
+                            <option value="12:00">12:00</option>
+                            <option value="13:00">13:00</option>
+                            <option value="13:30">13:30</option>
                         </select>
                     </div>
                 </div>
             </div>
 
-            <div id="cart-footer" class="p-4 border-t bg-gray-50 hidden">
-                <div class="flex justify-between items-center mb-4 text-xl font-bold">
-                    <span>合計</span><span class="text-brand-600">¥<span id="cart-total-price">0</span></span>
+            <div id="cart-footer" class="p-5 border-t bg-white hidden shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+                <div class="flex justify-between items-center mb-5 text-2xl font-bold">
+                    <span class="text-sm text-gray-500">合計(税込)</span>
+                    <span class="text-brand-600">¥<span id="cart-total-price">0</span></span>
                 </div>
-                <button onclick="processOrder()" id="submit-btn" class="w-full bg-brand-600 text-white font-bold py-4 rounded-xl shadow-lg">
-                    注文を確定する
+                <button id="submit-order-btn" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-colors">
+                    注文を確定して決済へ
                 </button>
             </div>
         </div>
     </div>
 
+    <!-- 完了画面 -->
     <div id="success-screen" class="fixed inset-0 bg-white z-[70] hidden flex-col items-center justify-center p-6 text-center">
-        <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
-            <i class="fa-solid fa-check text-4xl text-green-500"></i>
+        <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-8">
+            <i class="fa-solid fa-check text-5xl text-green-500"></i>
         </div>
-        <h2 class="text-2xl font-bold mb-2">ご注文完了！</h2>
-        <p class="text-gray-600 mb-8">注文番号を控えて、お支払いへお進みください。</p>
-        <div class="bg-gray-50 p-4 rounded-xl w-full max-w-sm mb-8 border">
-            <h3 class="text-sm text-gray-500 mb-1">注文番号</h3>
-            <p class="text-3xl font-mono font-bold text-gray-800" id="order-number">----</p>
+        <h2 class="text-2xl font-bold mb-3">ご注文を受け付けました！</h2>
+        <p class="text-gray-500 mb-10 leading-relaxed">
+            注文番号を控えて、<br>
+            お支払いへお進みください。
+        </p>
+        <div class="bg-gray-50 p-6 rounded-2xl w-full max-w-sm mb-10 border-2 border-dashed border-gray-200">
+            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Order Number</h3>
+            <p class="text-4xl font-mono font-black text-gray-800" id="order-number">----</p>
         </div>
-        <button onclick="location.href='https://paypay.ne.jp/'" class="w-full max-w-sm bg-[#FF0033] text-white font-bold py-4 rounded-xl shadow-lg">
-            PayPayで支払う
+        <button id="paypay-btn" class="w-full max-w-sm bg-[#FF0033] text-white font-bold py-4 rounded-2xl shadow-xl flex items-center justify-center">
+            <i class="fa-solid fa-wallet mr-2"></i>PayPayアプリを開く
         </button>
-        <button onclick="location.reload()" class="text-gray-400 text-sm underline mt-6">トップに戻る</button>
+        <button id="reset-btn" class="text-gray-400 text-sm font-medium mt-8 border-b border-gray-300 pb-1">TOPへ戻る</button>
+    </div>
+
+    <!-- エラー・警告用カスタムトースト -->
+    <div id="custom-alert" class="fixed top-20 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full text-sm font-bold shadow-2xl z-[100] hidden">
+        メッセージ
     </div>
 
     <script>
+        // 設定データ
         const products = [
-            { id: 'p1', name: '特製 焼き鳥', price: 400, desc: '秘伝のタレで焼き上げました', img: 'https://placehold.co/100x100/fef2f2/ef4444?text=Yakitori' },
-            { id: 'p2', name: 'ジャンボ フランクフルト', price: 300, desc: 'パリッとジューシーな特大サイズ', img: 'https://placehold.co/100x100/fef2f2/ef4444?text=Frankfurt' }
+            { id: 'p1', name: '特製 焼き鳥 (3本組)', price: 400, desc: '秘伝のタレでじっくり焼き上げました', img: 'https://placehold.co/100x100/ef4444/ffffff?text=Yakitori' },
+            { id: 'p2', name: 'ジャンボ フランクフルト', price: 300, desc: '外はパリッと中はジューシーな特大サイズ', img: 'https://placehold.co/100x100/ef4444/ffffff?text=Frank' },
         ];
 
         let cart = [];
         let receiveMethod = 'now';
 
+        // 初期化
+        document.addEventListener('DOMContentLoaded', () => {
+            renderProducts();
+            initEventListeners();
+            updateUI();
+        });
+
         function renderProducts() {
             const list = document.getElementById('product-list');
             list.innerHTML = products.map(p => `
-                <div class="bg-white p-4 rounded-xl shadow-sm flex items-center">
-                    <img src="${p.img}" class="w-20 h-20 rounded-lg mr-4 border">
+                <div class="bg-white p-4 rounded-2xl shadow-sm flex items-center border border-gray-50">
+                    <img src="${p.img}" class="w-20 h-20 rounded-xl mr-4 object-cover">
                     <div class="flex-1">
-                        <h4 class="font-bold">${p.name}</h4>
-                        <p class="text-xs text-gray-500 mb-1">${p.desc}</p>
-                        <div class="font-bold text-brand-600">¥${p.price}</div>
+                        <h4 class="font-bold text-gray-900">${p.name}</h4>
+                        <p class="text-[10px] text-gray-500 mb-2 leading-tight">${p.desc}</p>
+                        <div class="font-bold text-brand-600 text-lg">¥${p.price}</div>
                     </div>
-                    <button onclick="addToCart('${p.id}')" class="bg-brand-100 text-brand-600 w-10 h-10 rounded-full flex items-center justify-center">
-                        <i class="fa-solid fa-plus"></i>
+                    <button onclick="addToCart('${p.id}')" class="bg-brand-500 text-white w-12 h-12 rounded-xl flex items-center justify-center shadow-sm active:bg-brand-600 transition-colors">
+                        <i class="fa-solid fa-cart-plus text-xl"></i>
                     </button>
                 </div>
             `).join('');
         }
 
-        function addToCart(id) {
+        function initEventListeners() {
+            document.getElementById('cart-trigger').addEventListener('click', openCart);
+            document.getElementById('close-cart-btn').addEventListener('click', closeCart);
+            document.getElementById('btn-now').addEventListener('click', () => setMethod('now'));
+            document.getElementById('btn-later').addEventListener('click', () => setMethod('later'));
+            document.getElementById('submit-order-btn').addEventListener('click', processOrder);
+            document.getElementById('paypay-btn').addEventListener('click', () => {
+                location.href = 'https://paypay.ne.jp/';
+            });
+            document.getElementById('reset-btn').addEventListener('click', () => {
+                location.reload();
+            });
+
+            // 背景クリックで閉じる
+            document.getElementById('cart-modal').addEventListener('click', (e) => {
+                if (e.target.id === 'cart-modal') closeCart();
+            });
+        }
+
+        function showAlert(msg) {
+            const alertBox = document.getElementById('custom-alert');
+            alertBox.innerText = msg;
+            alertBox.classList.remove('hidden');
+            setTimeout(() => alertBox.classList.add('hidden'), 3000);
+        }
+
+        window.addToCart = function(id) {
             const product = products.find(p => p.id === id);
             const item = cart.find(i => i.product.id === id);
-            if (item) item.quantity++; else cart.push({ product, quantity: 1 });
+            if (item) {
+                item.quantity++;
+            } else {
+                cart.push({ product, quantity: 1 });
+            }
             updateUI();
-        }
+            // カートへの追加演出（バッジを揺らす等）
+            const badge = document.getElementById('cart-badge');
+            badge.classList.remove('animate-bounce');
+            void badge.offsetWidth; // リフロー
+            badge.classList.add('animate-bounce');
+        };
 
         function updateUI() {
             const badge = document.getElementById('cart-badge');
@@ -153,67 +226,118 @@
             const empty = document.getElementById('empty-cart-msg');
             
             if (cart.length === 0) {
-                empty.classList.remove('hidden'); itemsCont.innerHTML = ''; footer.classList.add('hidden'); form.classList.add('hidden');
+                empty.classList.remove('hidden');
+                itemsCont.innerHTML = '';
+                footer.classList.add('hidden');
+                form.classList.add('hidden');
                 return;
             }
 
-            empty.classList.add('hidden'); footer.classList.remove('hidden'); form.classList.remove('hidden');
+            empty.classList.add('hidden');
+            footer.classList.remove('hidden');
+            form.classList.remove('hidden');
+            
             let total = 0;
             itemsCont.innerHTML = cart.map((i, idx) => {
-                total += i.product.price * i.quantity;
+                const subtotal = i.product.price * i.quantity;
+                total += subtotal;
                 return `
-                    <div class="flex justify-between items-center py-2 border-b">
-                        <div><div class="font-medium">${i.product.name}</div><div class="text-sm text-gray-500">¥${i.product.price}</div></div>
-                        <div class="flex items-center space-x-3 bg-gray-100 rounded-lg p-1">
-                            <button onclick="changeQty(${idx},-1)" class="w-8 h-8 bg-white rounded shadow text-xs">－</button>
-                            <span class="font-bold w-4 text-center">${i.quantity}</span>
-                            <button onclick="changeQty(${idx},1)" class="w-8 h-8 bg-white rounded shadow text-xs">＋</button>
+                    <div class="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
+                        <div class="flex-1 pr-4">
+                            <div class="font-bold text-gray-800">${i.product.name}</div>
+                            <div class="text-xs text-brand-500 font-bold">¥${i.product.price}</div>
+                        </div>
+                        <div class="flex items-center space-x-4 bg-gray-50 rounded-xl p-1 px-2 border border-gray-100">
+                            <button onclick="changeQty(${idx},-1)" class="w-8 h-8 flex items-center justify-center text-gray-400"><i class="fa-solid fa-minus text-xs"></i></button>
+                            <span class="font-bold w-4 text-center text-gray-800">${i.quantity}</span>
+                            <button onclick="changeQty(${idx},1)" class="w-8 h-8 flex items-center justify-center text-brand-500"><i class="fa-solid fa-plus text-xs"></i></button>
                         </div>
                     </div>`;
             }).join('');
             document.getElementById('cart-total-price').innerText = total.toLocaleString();
+            setMethod(receiveMethod); // 表示状態の維持
         }
 
-        function changeQty(idx, n) {
+        window.changeQty = function(idx, n) {
             cart[idx].quantity += n;
             if (cart[idx].quantity <= 0) cart.splice(idx, 1);
             updateUI();
+        };
+
+        function openCart() {
+            document.getElementById('cart-modal').classList.remove('hidden');
+            document.getElementById('cart-modal').classList.add('flex');
+            document.body.style.overflow = 'hidden'; // 背後スクロール防止
         }
 
-        function openCart() { document.getElementById('cart-modal').classList.remove('hidden'); document.getElementById('cart-modal').classList.add('flex'); }
-        function closeCart() { document.getElementById('cart-modal').classList.add('hidden'); document.getElementById('cart-modal').classList.remove('flex'); }
+        function closeCart() {
+            document.getElementById('cart-modal').classList.add('hidden');
+            document.getElementById('cart-modal').classList.remove('flex');
+            document.body.style.overflow = '';
+        }
 
         function setMethod(m) {
             receiveMethod = m;
-            document.getElementById('btn-now').className = m === 'now' ? 'border-2 rounded-lg p-3 text-center border-brand-500 bg-brand-50 text-brand-600' : 'border-2 border-gray-200 rounded-lg p-3 text-center text-gray-600';
-            document.getElementById('btn-later').className = m === 'later' ? 'border-2 rounded-lg p-3 text-center border-brand-500 bg-brand-50 text-brand-600' : 'border-2 border-gray-200 rounded-lg p-3 text-center text-gray-600';
-            document.getElementById('time-select-container').classList.toggle('hidden', m === 'now');
+            const btnNow = document.getElementById('btn-now');
+            const btnLater = document.getElementById('btn-later');
+            const timeContainer = document.getElementById('time-select-container');
+
+            if (m === 'now') {
+                btnNow.className = 'border-2 border-brand-500 bg-brand-50 text-brand-600 rounded-xl p-4 text-center font-bold';
+                btnLater.className = 'border-2 border-gray-100 bg-white text-gray-400 rounded-xl p-4 text-center font-medium';
+                timeContainer.classList.add('hidden');
+            } else {
+                btnLater.className = 'border-2 border-brand-500 bg-brand-50 text-brand-600 rounded-xl p-4 text-center font-bold';
+                btnNow.className = 'border-2 border-gray-100 bg-white text-gray-400 rounded-xl p-4 text-center font-medium';
+                timeContainer.classList.remove('hidden');
+            }
         }
 
-        function processOrder() {
-            const time = document.getElementById('pickup-time').value;
-            if (receiveMethod === 'later' && !time) return alert('受取時間を選択してください');
+        async function processOrder() {
+            const timeSelect = document.getElementById('pickup-time');
+            const time = timeSelect.value;
+            
+            if (receiveMethod === 'later' && !time) {
+                showAlert('受取希望時間を選択してください');
+                timeSelect.focus();
+                return;
+            }
+
+            const submitBtn = document.getElementById('submit-order-btn');
+            submitBtn.disabled = true;
+            submitBtn.innerText = '送信中...';
 
             const orderId = 'A-' + Math.floor(1000 + Math.random() * 9000);
             const detailText = cart.map(i => `${i.product.name} x${i.quantity}`).join(', ');
             const total = cart.reduce((s, i) => s + i.product.price * i.quantity, 0);
 
+            // Google Form 送信処理
             const formUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSeqcgDK1joi3notW0poQ87CH62L_YmTv-0wmSeliU1XNJhi-Q/formResponse';
             const body = new URLSearchParams();
-            body.append('entry.1569101067', orderId);
-            body.append('entry.1227813871', receiveMethod === 'now' ? '即時' : time);
+            body.append('entry.1569101067', orderId,receiveMethod === 'now' ? '即時受取' : time, total + '円');
+            body.append('entry.1227813871', receiveMethod === 'now' ? '即時受取' : time);
             body.append('entry.1295866226', detailText);
             body.append('entry.2109916161', total + '円');
 
-            fetch(formUrl, { method: 'POST', mode: 'no-cors', body }).then(() => {
+            try {
+                // no-corsのため結果は取得できないが送信は行われる
+                await fetch(formUrl, { method: 'POST', mode: 'no-cors', body });
+                
+                // 成功画面表示
                 document.getElementById('order-number').innerText = orderId;
                 document.getElementById('success-screen').classList.remove('hidden');
                 document.getElementById('success-screen').classList.add('flex');
-                cart = []; updateUI(); closeCart();
-            });
+                
+                // カートクリア
+                cart = [];
+                updateUI();
+                closeCart();
+            } catch (err) {
+                showAlert('通信エラーが発生しました。もう一度お試しください。');
+                submitBtn.disabled = false;
+                submitBtn.innerText = '注文を確定する';
+            }
         }
-
-        window.onload = renderProducts;
     </script>
 </body>
 </html>
